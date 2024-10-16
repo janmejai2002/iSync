@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clipper</title>
+    <style>
+                /* Global Styles */
+
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+        .refresh-button-container {
+          margin-bottom: 10px; /* Space between button and drop area */
+        }
+
+        #refresh-button {
+          padding: 10px 15px;
+          background-color: #007BFF; /* Bootstrap primary color */
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+        }
+
+        #refresh-button:hover {
+          background-color: #0056b3; /* Darker shade on hover */
+        }
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #2f2f2f; /* Dark gray background */
+          color: #fff; /* White text color */
+          line-height: 1.6;
+        }
+
+        /* Header Styles */
+
+        h1 {
+          font-size: 36px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          text-align: center;
+        }
+
+        /* Drop Zone Styles */
+
+        #dropZone {
+          border: 2px dashed #666; /* Dark gray border */
+          padding: 20px;
+          text-align: center;
+          margin-bottom: 20px;
+          cursor: pointer;
+          background-color: #333; /* Dark gray background */
+          color: #fff; /* White text color */
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #dropZone.dragover {
+          border-color: #fff; /* White border on hover */
+          background-color: #444; /* Dark gray background on hover */
+        }
+
+        /* Image Container Styles */
+
+        #imageContainer {
+          max-width: 800px;
+          margin: 40px auto;
+          padding: 20px;
+          background-color: #333; /* Dark gray background */
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #imageContainer img {
+          max-width: 100%;
+          height: auto;
+          margin: 20px auto;
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Button Styles */
+
+        button {
+          background-color: #333; /* Dark gray background */
+          color: #fff; /* White text color */
+          border: none;
+          padding: 10px 20px;
+          font-size: 16px;
+          cursor: pointer;
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+          background-color: #444; /* Dark gray background on hover */
+        }
+
+        /* Socket.IO Connection Indicator */
+
+        .socket-connected {
+          position: fixed;
+          top: 10px;
+          right: 10px;
+          background-color: #333; /* Dark gray background */
+          color: #fff; /* White text color */
+          padding: 5px 10px;
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .socket-connected::before {
+
+          font-size: 14px;
+          margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1></h1>
+
+    <div id="dropZone">Drop</div>
+    <div class="refresh-button-container">
+    <button id="refresh-button">Refresh</button>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" hidden>
+    <button id="uploadButton">Upload</button>
+    <div id="imageContainer">
+        {% if latest_image_url %}
+            <img id="latestImage" src="{{ latest_image_url }}">
+        {% else %}
+            <p>No image uploaded yet.</p>
+        {% endif %}
+    </div>
+    <!-- Socket.IO Connection Indicator -->
+<div class="socket-connected">
+  <span>Connected to Socket.IO</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+
+    <script>
+       
+      document.getElementById('refresh-button').addEventListener('click', function() {
+        location.reload(); // This will refresh the page
+      });
+           
+        const uploadButton = document.getElementById('uploadButton');
+        const fileInput = document.getElementById('fileInput');
+        const imageContainer = document.getElementById('imageContainer');
+        let latestImage = document.getElementById('latestImage');
+
+        // Handle button click and trigger file input
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Handle file input selection
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                previewAndUploadImage(file);
+            }
+        });
+
+        // Handle paste event for pasting images with Ctrl+V
+        window.addEventListener('paste', (event) => {
+            const items = event.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        previewAndUploadImage(file);
+                    }
+                }
+            }
+        });
+
+        // Function to preview and upload the image
+    async function previewAndUploadImage(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+        const imageUrl = URL.createObjectURL(file);
+        latestImage.src = imageUrl; // Client-side preview
+        };
+        reader.readAsDataURL(file);
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await fetch('/upload_image', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            latestImage.src = result.image_url; // Server-side image
+            socket.emit('new_image', result.image_url); // Emit for real-time updates
+        } else {
+            alert(result.error);
+        }
+}
+
+        // Handle drag-and-drop
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                previewAndUploadImage(file);
+            }
+        });
+
+        // WebSocket connection
+        const socket = io();
+
+        console.log('WebSocket connection established'); // Log when WebSocket connection is established
+
+        // Update the Socket.IO connection indicator
+        socket.on('connect', () => {
+          document.querySelector('.socket-connected').style.display = 'block';
+        });
+
+        socket.on('disconnect', () => {
+          document.querySelector('.socket-connected').style.display = 'none';
+        });
+
+        // Receive real-time updates for the latest image
+        socket.on('new_image', (imageUrl) => {
+            console.log('Received new image:', imageUrl);
+            updateImage(imageUrl);  // Update the image on the page
+        });
+
+        function updateImage(imageUrl) {
+            const imageContainer = document.getElementById('imageContainer');
+            const newImage = document.createElement('img');
+            newImage.src = imageUrl;
+            imageContainer.innerHTML = ''; // Clear existing content
+            imageContainer.appendChild(newImage);
+        }
+    </script>
+</body>
+</html>
