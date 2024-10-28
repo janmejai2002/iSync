@@ -1,13 +1,20 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, send_file,jsonify, url_for, abort,redirect, flash
 from werkzeug.utils import secure_filename
 import os
 from flask_socketio import SocketIO, emit
+import zipfile
+from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key="chingalinga"
 socketio = SocketIO(app)
 
-UPLOAD_FOLDER = 'static/uploads'
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+uploaded_images = []
+uploaded_zip_files = []
+
 
 # Variable to store the latest uploaded image URL
 latest_image_url = None
@@ -27,7 +34,9 @@ def test_disconnect():
 
 @app.route('/')
 def index():
-    return render_template('index.html', latest_image_url=latest_image_url)
+    current_time = datetime.now().timestamp()
+    return render_template('index.html', latest_image_url=uploaded_images, uploaded_zip_files=uploaded_zip_files, current_time=current_time
+    )
 
 # Image upload route
 @app.route('/upload_image', methods=['POST'])
@@ -45,7 +54,7 @@ def upload_image():
 
     # Store the URL of the latest image
     latest_image_url = f'/static/uploads/{filename}'
-
+    uploaded_images.append(latest_image_url)
     # Emit the update to all connected clients
     socketio.emit('new_image', latest_image_url)  # Emit here
 
@@ -55,6 +64,43 @@ import socket
 
 # Get the local IP address
 
+# ZIP file upload route
+@app.route('/upload_zip', methods=['POST'])
+def upload_zip():
+    if 'zip_file' not in request.files:
+        flash('No file part')
+        return redirect(request.url)
+    
+    file = request.files['zip_file']
+    
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(request.url)
+    
+    if file and file.filename.endswith('.zip'):
+        # Save the ZIP file
+        zip_filename = secure_filename(file.filename)
+        zip_filepath = os.path.join(app.config['UPLOAD_FOLDER'], zip_filename)
+        file.save(zip_filepath)
+
+        # Add the uploaded ZIP file to the list
+        uploaded_zip_files.append(f'/static/uploads/{zip_filename}')
+  # Emit an update to refresh the ZIP file list on connected clients
+        socketio.emit('new_zip', {'zip_url': f'/static/uploads/{zip_filename}'})
+        
+        flash('ZIP file uploaded successfully!')
+        return redirect(url_for('index'))  # Redirect to the upload page
+    
+    flash('Invalid file type. Please upload a ZIP file.')
+    return redirect(request.url)
+
+# Route to serve uploaded ZIP files for download
+@app.route('/download_zip/<string:filename>')
+def download_zip(filename):
+    zip_filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(zip_filepath):
+        return send_file(zip_filepath, as_attachment=True)
+    abort(404, 'ZIP file not found')
 
 # Route for latest image fetching
 @app.route('/latest_image', methods=['GET'])

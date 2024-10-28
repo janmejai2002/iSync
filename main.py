@@ -164,10 +164,7 @@ def start_monitoring():
         monitoring_thread.daemon = True
         monitoring_thread.start()
 
-        flask_process=subprocess.Popen(['python', 'app.py'],
-                                        creationflags=subprocess.CREATE_NO_WINDOW,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
+        flask_process=subprocess.Popen(['python', 'app.py'])
         
         start_button.config(text="Stop")  # Change text to Stop
         update_status("Monitoring Started")

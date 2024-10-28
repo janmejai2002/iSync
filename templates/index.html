@@ -116,6 +116,45 @@
 
           font-size: 14px;
           margin-right: 10px;
+
+          .zip-file-item {
+        margin: 10px 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .zip-file-item button {
+        background-color: #007BFF; /* Button color */
+        color: #fff;
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-left: 10px;
+    }
+
+    .zip-file-item button:hover {
+        background-color: #0056b3; /* Darker blue on hover */
+    }
+
+    /* Ensures button visibility across devices */
+    .zip-file-item button:active, .zip-file-item button:focus {
+        outline: none;
+    }
+    .download-btn {
+        background-color: #007BFF;
+        color: #fff;
+        text-decoration: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        margin-left: 10px;
+        display: inline-block;
+        font-weight: bold;
+    }
+
+    .download-btn:hover {
+        background-color: #0056b3;
+    }
         }
     </style>
 </head>
@@ -127,15 +166,50 @@
     <button id="refresh-button">Refresh</button>
     </div>
 
+
+    <form action="/upload_zip" method="post" enctype="multipart/form-data">
+        <input type="file" name="zip_file" accept=".zip" required>
+        <button type="submit">Upload ZIP</button>
+    </form>
+
     <input type="file" id="fileInput" accept="image/*" hidden>
     <button id="uploadButton">Upload</button>
-    <div id="imageContainer">
+
+
+    <!-- <div id="zip-files-list">
+      {% for zip_file in uploaded_zip_files %}
+          <div class="zip-file-item">
+              <span>{{ zip_file.split('/')[-1] }}</span>
+              <button onclick="downloadZip('{{ zip_file }}')">Download ZIP</button>
+          </div>
+      {% endfor %}
+  </div> -->
+  <div id="zip-files-list">
+    {% for zip_file in uploaded_zip_files %}
+        <div class="zip-file-item">
+            <span>{{ zip_file.split('/')[-1] }}</span>
+            <a href="{{ zip_file }}" download class="download-btn">Download ZIP</a>
+        </div>
+    {% endfor %}
+</div>
+    <!-- <div id="imageContainer">
         {% if latest_image_url %}
             <img id="latestImage" src="{{ latest_image_url }}">
         {% else %}
             <p>No image uploaded yet.</p>
         {% endif %}
-    </div>
+    </div> -->
+    <div id="imageContainer">
+      {% if uploaded_images %}
+          {% for image_url in uploaded_images|reverse %}
+              <img src="{{ latest_image_url }}" alt="Uploaded Image">
+          {% endfor %}
+      {% else %}
+          <p>No images uploaded yet.</p>
+      {% endif %}
+  </div>
+
+
     <!-- Socket.IO Connection Indicator -->
 <div class="socket-connected">
   <span>Connected to Socket.IO</span>
@@ -179,6 +253,14 @@
                 }
             }
         });
+        function downloadZip(zipUrl) {
+        const link = document.createElement('a');
+        link.href = zipUrl;
+        link.download = zipUrl.split('/').pop();  // Set the filename for download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
         // Function to preview and upload the image
     async function previewAndUploadImage(file) {
@@ -247,12 +329,19 @@
             updateImage(imageUrl);  // Update the image on the page
         });
 
+        socket.on('new_zip', (data) => {
+        const zipFilesList = document.getElementById('zip-files-list');
+        const newZipItem = document.createElement('li');
+        newZipItem.innerHTML = `<a href="${data.zip_url}" download>${data.zip_url.split('/').pop()}</a>`;
+        zipFilesList.appendChild(newZipItem);
+      });
         function updateImage(imageUrl) {
             const imageContainer = document.getElementById('imageContainer');
             const newImage = document.createElement('img');
             newImage.src = imageUrl;
-            imageContainer.innerHTML = ''; // Clear existing content
-            imageContainer.appendChild(newImage);
+            //imageContainer.innerHTML = '' // Clear existing content
+            // imageContainer.appendChild(newImage);
+            imageContainer.insertBefore(newImage, imageContainer.firstChild)
         }
     </script>
 </body>
