@@ -4,185 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InstaSync</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-                /* Global Styles */
-
+        /* Global Styles */
         * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
-        .refresh-button-container {
-          margin-bottom: 10px; /* Space between button and drop area */
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        #refresh-button {
-          padding: 10px 15px;
-          background-color: #007BFF; /* Bootstrap primary color */
-          color: white;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-        }
-
-        #refresh-button:hover {
-          background-color: #0056b3; /* Darker shade on hover */
-        }
         body {
-          font-family: Arial, sans-serif;
-          background-color: #2f2f2f; /* Dark gray background */
-          color: #fff; /* White text color */
-          line-height: 1.6;
+            font-family: 'Roboto', sans-serif;
+            background-color: #2f2f2f; /* Dark gray background */
+            color: #fff; /* White text color */
+            line-height: 1.6;
+            padding: 20px;
         }
-
-        /* Header Styles */
 
         h1 {
-          font-size: 36px;
-          font-weight: bold;
-          margin-bottom: 20px;
-          text-align: center;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        /* Flexbox Container */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 20px;
         }
 
         /* Drop Zone Styles */
-
         #dropZone {
-          border: 2px dashed #666; /* Dark gray border */
-          padding: 20px;
-          text-align: center;
-          margin-bottom: 20px;
-          cursor: pointer;
-          background-color: #333; /* Dark gray background */
-          color: #fff; /* White text color */
-          border-radius: 10px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border: 2px dashed #666; /* Dark gray border */
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            background-color: #333; /* Dark gray background */
+            color: #fff; /* White text color */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
         }
 
         #dropZone.dragover {
-          border-color: #fff; /* White border on hover */
-          background-color: #444; /* Dark gray background on hover */
+            border-color: #fff; /* White border on hover */
+            background-color: #444; /* Dark gray background on hover */
         }
-
-        /* Image Container Styles */
-
-        #imageContainer {
-          max-width: 800px;
-          margin: 40px auto;
-          padding: 20px;
-          background-color: #333; /* Dark gray background */
-          border-radius: 10px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-
-        #imageContainer img {
-          max-width: 100%;
-          height: auto;
-          margin: 20px auto;
-          border-radius: 10px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-        #clear-button {
-    background-color: #dc3545; /* Red color for warning */
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin: 10px;
-}
-
-#clear-button:hover {
-    background-color: #c82333; /* Darker red on hover */
-}
 
         /* Button Styles */
-
         button {
-          background-color: #333; /* Dark gray background */
-          color: #fff; /* White text color */
-          border: none;
-          padding: 10px 20px;
-          font-size: 16px;
-          cursor: pointer;
-          border-radius: 10px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            background-color: #007BFF; /* Button color */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin: 10px;
         }
 
         button:hover {
-          background-color: #444; /* Dark gray background on hover */
+            background-color: #0056b3; /* Darker shade on hover */
+            transform: scale(1.05); /* Slightly enlarge on hover */
+        }
+
+        /* Image Container Styles */
+        #imageContainer {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #333; /* Dark gray background */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #imageContainer img {
+            max-width: 100%;
+            height: auto;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem; /* Smaller font size on mobile */
+            }
+
+            .container {
+                flex-direction: column; /* Stack items vertically on small screens */
+            }
+        }
+
+        /* Animation Keyframes */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /* Socket.IO Connection Indicator */
-
         .socket-connected {
-          position: fixed;
-          top: 10px;
-          right: 10px;
-          background-color: #333; /* Dark gray background */
-          color: #fff; /* White text color */
-          padding: 5px 10px;
-          border-radius: 10px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #333; /* Dark gray background */
+            color: #fff; /* White text color */
+            padding: 5px 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
         }
-
-        .socket-connected::before {
-
-          font-size: 14px;
-          margin-right: 10px;
-
-          .zip-file-item {
-        margin: 10px 0;
-        display: flex;
-        align-items: center;
-    }
-
-    .zip-file-item button {
-        background-color: #007BFF; /* Button color */
-        color: #fff;
-        border: none;
-        padding: 8px 15px;
-        cursor: pointer;
-        border-radius: 5px;
-        margin-left: 10px;
-    }
-
-    .zip-file-item button:hover {
-        background-color: #0056b3; /* Darker blue on hover */
-    }
-
-    /* Ensures button visibility across devices */
-    .zip-file-item button:active, .zip-file-item button:focus {
-        outline: none;
-    }
-    .download-btn {
-        background-color: #007BFF;
-        color: #fff;
-        text-decoration: none;
-        padding: 8px 15px;
-        border-radius: 5px;
-        margin-left: 10px;
-        display: inline-block;
-        font-weight: bold;
-    }
-
-    .download-btn:hover {
-        background-color: #0056b3;
-    }
-        }
-
-
     </style>
 </head>
 <body>
-    <h1></h1>
-
-    <div id="dropZone">Drop</div>
+    <h1>Welcome to InstaSync</h1>
+    <div id="dropZone">Drop your images here</div>
     <div class="refresh-button-container">
-    <button id="refresh-button">Refresh</button>
+        <button id="refresh-button">Refresh</button>
+        <button id="clear-button">Clear All Images</button>
     </div>
-
-    <button id="clear-button">Clear All Images</button>
-
 
     <form action="/upload_zip" method="post" enctype="multipart/form-data">
         <input type="file" name="zip_file" accept=".zip" required>
@@ -192,211 +136,137 @@
     <input type="file" id="fileInput" accept="image/*" hidden>
     <button id="uploadButton">Upload</button>
 
-
-    <!-- <div id="zip-files-list">
-      {% for zip_file in uploaded_zip_files %}
-          <div class="zip-file-item">
-              <span>{{ zip_file.split('/')[-1] }}</span>
-              <button onclick="downloadZip('{{ zip_file }}')">Download ZIP</button>
-          </div>
-      {% endfor %}
-  </div> -->
-  <div id="zip-files-list">
-    {% for zip_file in uploaded_zip_files %}
-        <div class="zip-file-item">
-            <span>{{ zip_file.split('/')[-1] }}</span>
-            <a href="{{ zip_file }}" download class="download-btn">Download ZIP</a>
-        </div>
-    {% endfor %}
-</div>
-    <!-- <div id="imageContainer">
-        {% if latest_image_url %}
-            <img id="latestImage" src="{{ latest_image_url }}">
-        {% else %}
-            <p>No image uploaded yet.</p>
-        {% endif %}
-    </div> -->
-<div id="imageContainer">
-    {% if uploaded_images %}
-        {% for image_url in uploaded_images|reverse %}
-            <img src="{{ image_url }}" alt="Uploaded Image">  <!-- Changed from latest_image_url to image_url -->
+    <div id="zip-files-list">
+        {% for zip_file in uploaded_zip_files %}
+            <div class="zip-file-item">
+                <span>{{ zip_file.split('/')[-1] }}</span>
+                <a href="{{ zip_file }}" download class="download-btn">Download ZIP</a>
+            </div>
         {% endfor %}
-    {% else %}
-        <p>No images uploaded yet.</p>
-    {% endif %}
-</div>
+    </div>
 
+    <div id="imageContainer">
+        {% if uploaded_images %}
+            {% for image_url in uploaded_images|reverse %}
+                <img src="{{ image_url }}" alt="Uploaded Image">
+            {% endfor %}
+        {% else %}
+            <p>No images uploaded yet.</p>
+        {% endif %}
+    </div>
 
-    <!-- Socket.IO Connection Indicator -->
-<div class="socket-connected">
-  <span>Connected to Socket.IO</span>
-</div>
+    <div class="socket-connected">
+        <span>Connected to Socket.IO</span>
+    </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
-<script>
-  // Initialize socket first
-  const socket = io();
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
 
-  document.addEventListener('DOMContentLoaded', () => {
-      // Clear button functionality
-      document.getElementById('clear-button').addEventListener('click', async () => {
-    if (confirm('Are you sure you want to clear all images?')) {
-        try {
-            const response = await fetch('/clear_images', {
-                method: 'POST',
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('clear-button').addEventListener('click', async () => {
+                if (confirm('Are you sure you want to clear all images?')) {
+                    try {
+                        const response = await fetch('/clear_images', { method: 'POST' });
+                        if (response.ok) {
+                            document.getElementById('imageContainer').innerHTML = '<p>No images uploaded yet.</p>';
+                            location.reload();
+                        } else {
+                            alert('Failed to clear images');
+                        }
+                    } catch (error) {
+                        console.error('Error clearing images:', error);
+                        alert('Error clearing images');
+                    }
+                }
             });
-            
-            if (response.ok) {
-                const imageContainer = document.getElementById('imageContainer');
-                imageContainer.innerHTML = '<p>No images uploaded yet.</p>';
-                // Optionally reload the page to ensure everything is fresh
+
+            document.getElementById('refresh-button').addEventListener('click', () => {
                 location.reload();
-            } else {
-                alert('Failed to clear images');
+            });
+
+            const uploadButton = document.getElementById('uploadButton');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadButton.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    previewAndUploadImage(file);
+                }
+            });
+
+            const dropZone = document.getElementById('dropZone');
+            dropZone.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (event) => {
+                event.preventDefault();
+                dropZone.classList.remove('dragover');
+                const file = event.dataTransfer.files[0];
+                if (file) {
+                    previewAndUploadImage(file);
+                }
+            });
+        });
+
+        socket.on('connect', () => {
+            document.querySelector('.socket-connected').style.display = 'block';
+            console.log('WebSocket connection established');
+        });
+
+        socket.on('disconnect', () => {
+            document.querySelector('.socket-connected').style.display = 'none';
+        });
+
+        socket.on('new_image', (imageUrl) => {
+            if (!document.querySelector(`img[src="${imageUrl}"]`)) {
+                const imageContainer = document.getElementById('imageContainer');
+                const newImage = document.createElement('img');
+                newImage.src = imageUrl;
+                newImage.alt = "Uploaded Image";
+                imageContainer.insertBefore(newImage, imageContainer.firstChild);
             }
-        } catch (error) {
-            console.error('Error clearing images:', error);
-            alert('Error clearing images');
+        });
+
+        async function previewAndUploadImage(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/upload_image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (!document.querySelector(`img[src="${result.image_url}"]`)) {
+                        const imageContainer = document.getElementById('imageContainer');
+                        const newImage = document.createElement('img');
+                        newImage.src = result.image_url;
+                        newImage.alt = "Uploaded Image";
+                        imageContainer.insertBefore(newImage, imageContainer.firstChild);
+                    }
+                    socket.emit('new_image', result.image_url);
+                } else {
+                    alert(result.error);
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                alert('Error uploading image');
+            }
         }
-    }
-});
-
-      // Refresh button
-      document.getElementById('refresh-button').addEventListener('click', function() {
-          location.reload();
-      });
-
-      const uploadButton = document.getElementById('uploadButton');
-      const fileInput = document.getElementById('fileInput');
-      const imageContainer = document.getElementById('imageContainer');
-      let latestImage = document.getElementById('latestImage');
-
-      // Handle button click and trigger file input
-      uploadButton.addEventListener('click', () => {
-          fileInput.click();
-      });
-
-      // Handle file input selection
-      fileInput.addEventListener('change', (event) => {
-          const file = event.target.files[0];
-          if (file) {
-              previewAndUploadImage(file);
-          }
-      });
-
-      // Handle paste event
-      window.addEventListener('paste', (event) => {
-          const items = event.clipboardData.items;
-          for (let i = 0; i < items.length; i++) {
-              if (items[i].type.indexOf('image') !== -1) {
-                  const file = items[i].getAsFile();
-                  if (file) {
-                      previewAndUploadImage(file);
-                  }
-              }
-          }
-      });
-
-      // Handle drag-and-drop
-      const dropZone = document.getElementById('dropZone');
-      dropZone.addEventListener('dragover', (event) => {
-          event.preventDefault();
-          dropZone.classList.add('dragover');
-      });
-
-      dropZone.addEventListener('dragleave', () => {
-          dropZone.classList.remove('dragover');
-      });
-
-      dropZone.addEventListener('drop', (event) => {
-          event.preventDefault();
-          dropZone.classList.remove('dragover');
-          const file = event.dataTransfer.files[0];
-          if (file) {
-              previewAndUploadImage(file);
-          }
-      });
-  });
-
-  // Socket event listeners
-  socket.on('connect', () => {
-      document.querySelector('.socket-connected').style.display = 'block';
-      console.log('WebSocket connection established');
-  });
-
-  socket.on('disconnect', () => {
-      document.querySelector('.socket-connected').style.display = 'none';
-  });
-
-  socket.on('new_image', (imageUrl) => {
-      console.log('Received new image:', imageUrl);
-      if (!document.querySelector(`img[src="${imageUrl}"]`)) {
-          const imageContainer = document.getElementById('imageContainer');
-          const newImage = document.createElement('img');
-          newImage.src = imageUrl;
-          newImage.alt = "Uploaded Image";
-          imageContainer.insertBefore(newImage, imageContainer.firstChild);
-      }
-  });
-
-  socket.on('images_cleared', () => {
-      const imageContainer = document.getElementById('imageContainer');
-      imageContainer.innerHTML = '<p>No images uploaded yet.</p>';
-  });
-
-  socket.on('new_zip', (data) => {
-      const zipFilesList = document.getElementById('zip-files-list');
-      const newZipItem = document.createElement('li');
-      newZipItem.innerHTML = `<a href="${data.zip_url}" download>${data.zip_url.split('/').pop()}</a>`;
-      zipFilesList.appendChild(newZipItem);
-  });
-
-  // Helper functions
-  function downloadZip(zipUrl) {
-      const link = document.createElement('a');
-      link.href = zipUrl;
-      link.download = zipUrl.split('/').pop();
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  }
-
-  async function previewAndUploadImage(file) {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      try {
-          const response = await fetch('/upload_image', {
-              method: 'POST',
-              body: formData
-          });
-
-          const result = await response.json();
-
-          if (response.ok) {
-              if (!document.querySelector(`img[src="${result.image_url}"]`)) {
-                  const imageContainer = document.getElementById('imageContainer');
-                  const newImage = document.createElement('img');
-                  newImage.src = result.image_url;
-                  newImage.alt = "Uploaded Image";
-                  imageContainer.insertBefore(newImage, imageContainer.firstChild);
-              }
-              socket.emit('new_image', result.image_url);
-          } else {
-              alert(result.error);
-          }
-      } catch (error) {
-          console.error('Error uploading image:', error);
-          alert('Error uploading image');
-      }
-  }
-
-  function updateImage(imageUrl) {
-      const imageContainer = document.getElementById('imageContainer');
-      const newImage = document.createElement('img');
-      newImage.src = imageUrl;
-      imageContainer.insertBefore(newImage, imageContainer.firstChild);
-  }
-</script>
+    </script>
 </body>
 </html>
