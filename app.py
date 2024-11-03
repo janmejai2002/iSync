@@ -26,7 +26,7 @@ def load_uploaded_files():
         uploaded_zip_files = []
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 
 app.secret_key=os.environ.get('FLASK_SECRET_KEY')
 socketio = SocketIO(app)

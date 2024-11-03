@@ -4,269 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InstaSync</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        /* Global Styles */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #2f2f2f; /* Dark gray background */
-            color: #fff; /* White text color */
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 2.5rem;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        /* Flexbox Container */
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
-            margin-top: 20px;
-        }
-
-        /* Drop Zone Styles */
-        #dropZone {
-            border: 2px dashed #666; /* Dark gray border */
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            cursor: pointer;
-            background-color: #333; /* Dark gray background */
-            color: #fff; /* White text color */
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.3s ease;
-        }
-
-        #dropZone.dragover {
-            border-color: #fff; /* White border on hover */
-            background-color: #444; /* Dark gray background on hover */
-        }
-
-        /* Button Styles */
-        button {
-            background-color: #007BFF; /* Button color */
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            margin: 10px;
-        }
-
-        button:hover {
-            background-color: #0056b3; /* Darker shade on hover */
-            transform: scale(1.05); /* Slightly enlarge on hover */
-        }
-
-        /* Image Container Styles */
-        #imageContainer {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #333; /* Dark gray background */
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-
-        #imageContainer img {
-            max-width: 100%;
-            height: auto;
-            margin: 20px auto;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem; /* Smaller font size on mobile */
-            }
-
-            .container {
-                flex-direction: column; /* Stack items vertically on small screens */
-            }
-        }
-
-        /* Animation Keyframes */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Socket.IO Connection Indicator */
-        .socket-connected {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: #333; /* Dark gray background */
-            color: #fff; /* White text color */
-            padding: 5px 10px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-    </style>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <!-- Our custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <h1>Welcome to InstaSync</h1>
-    <div id="dropZone">Drop your images here</div>
-    <div class="refresh-button-container">
-        <button id="refresh-button">Refresh</button>
-        <button id="clear-button">Clear All Images</button>
-    </div>
-
-    <form action="/upload_zip" method="post" enctype="multipart/form-data">
-        <input type="file" name="zip_file" accept=".zip" required>
-        <button type="submit">Upload ZIP</button>
-    </form>
-
-    <input type="file" id="fileInput" accept="image/*" hidden>
-    <button id="uploadButton">Upload</button>
-
-    <div id="zip-files-list">
-        {% for zip_file in uploaded_zip_files %}
-            <div class="zip-file-item">
-                <span>{{ zip_file.split('/')[-1] }}</span>
-                <a href="{{ zip_file }}" download class="download-btn">Download ZIP</a>
+    <div class="container">
+        <h1>InstaSync</h1>
+        
+        <div class="grid">
+            <div id="dropZone">
+                <p>Drag and drop an image or click to upload</p>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+                <button id="uploadButton" class="button">Upload Image</button>
             </div>
-        {% endfor %}
-    </div>
+        </div>
 
-    <div id="imageContainer">
-        {% if uploaded_images %}
-            {% for image_url in uploaded_images|reverse %}
-                <img src="{{ image_url }}" alt="Uploaded Image">
+        <div class="refresh-button-container">
+            <button id="refresh-button" class="button">Refresh</button>
+        </div>
+
+        <button id="clear-button" class="button">Clear All Images</button>
+
+        <!-- ZIP file upload form -->
+        <form action="/upload_zip" method="post" enctype="multipart/form-data">
+            <input type="file" name="zip_file" accept=".zip" required>
+            <button type="submit" class="button">Upload ZIP</button>
+        </form>
+
+        <!-- ZIP files list -->
+        <div id="zip-files-list">
+            {% for zip_file in uploaded_zip_files %}
+                <div class="zip-file-item">
+                    <span>{{ zip_file.split('/')[-1] }}</span>
+                    <a href="{{ zip_file }}" download class="download-btn">Download ZIP</a>
+                </div>
             {% endfor %}
-        {% else %}
-            <p>No images uploaded yet.</p>
-        {% endif %}
+        </div>
+
+        <!-- Image container -->
+        <div id="imageContainer">
+            {% if uploaded_images %}
+                {% for image_url in uploaded_images|reverse %}
+                    <img src="{{ image_url }}" alt="Uploaded Image">
+                {% endfor %}
+            {% else %}
+                <p>No images uploaded yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- Socket.IO Connection Indicator -->
+        <div class="socket-connected">
+            <span>Connected to Socket.IO</span>
+        </div>
     </div>
 
-    <div class="socket-connected">
-        <span>Connected to Socket.IO</span>
-    </div>
-
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
-    <script>
-        const socket = io();
-
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('clear-button').addEventListener('click', async () => {
-                if (confirm('Are you sure you want to clear all images?')) {
-                    try {
-                        const response = await fetch('/clear_images', { method: 'POST' });
-                        if (response.ok) {
-                            document.getElementById('imageContainer').innerHTML = '<p>No images uploaded yet.</p>';
-                            location.reload();
-                        } else {
-                            alert('Failed to clear images');
-                        }
-                    } catch (error) {
-                        console.error('Error clearing images:', error);
-                        alert('Error clearing images');
-                    }
-                }
-            });
-
-            document.getElementById('refresh-button').addEventListener('click', () => {
-                location.reload();
-            });
-
-            const uploadButton = document.getElementById('uploadButton');
-            const fileInput = document.getElementById('fileInput');
-
-            uploadButton.addEventListener('click', () => {
-                fileInput.click();
-            });
-
-            fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    previewAndUploadImage(file);
-                }
-            });
-
-            const dropZone = document.getElementById('dropZone');
-            dropZone.addEventListener('dragover', (event) => {
-                event.preventDefault();
-                dropZone.classList.add('dragover');
-            });
-
-            dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('dragover');
-            });
-
-            dropZone.addEventListener('drop', (event) => {
-                event.preventDefault();
-                dropZone.classList.remove('dragover');
-                const file = event.dataTransfer.files[0];
-                if (file) {
-                    previewAndUploadImage(file);
-                }
-            });
-        });
-
-        socket.on('connect', () => {
-            document.querySelector('.socket-connected').style.display = 'block';
-            console.log('WebSocket connection established');
-        });
-
-        socket.on('disconnect', () => {
-            document.querySelector('.socket-connected').style.display = 'none';
-        });
-
-        socket.on('new_image', (imageUrl) => {
-            if (!document.querySelector(`img[src="${imageUrl}"]`)) {
-                const imageContainer = document.getElementById('imageContainer');
-                const newImage = document.createElement('img');
-                newImage.src = imageUrl;
-                newImage.alt = "Uploaded Image";
-                imageContainer.insertBefore(newImage, imageContainer.firstChild);
-            }
-        });
-
-        async function previewAndUploadImage(file) {
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-                const response = await fetch('/upload_image', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    if (!document.querySelector(`img[src="${result.image_url}"]`)) {
-                        const imageContainer = document.getElementById('imageContainer');
-                        const newImage = document.createElement('img');
-                        newImage.src = result.image_url;
-                        newImage.alt = "Uploaded Image";
-                        imageContainer.insertBefore(newImage, imageContainer.firstChild);
-                    }
-                    socket.emit('new_image', result.image_url);
-                } else {
-                    alert(result.error);
-                }
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                alert('Error uploading image');
-            }
-        }
-    </script>
+    
+    <!-- Our custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
