@@ -81,6 +81,19 @@
           border-radius: 10px;
           box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
         }
+        #clear-button {
+    background-color: #dc3545; /* Red color for warning */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+}
+
+#clear-button:hover {
+    background-color: #c82333; /* Darker red on hover */
+}
 
         /* Button Styles */
 
@@ -156,6 +169,8 @@
         background-color: #0056b3;
     }
         }
+
+
     </style>
 </head>
 <body>
@@ -165,6 +180,8 @@
     <div class="refresh-button-container">
     <button id="refresh-button">Refresh</button>
     </div>
+
+    <button id="clear-button">Clear All Images</button>
 
 
     <form action="/upload_zip" method="post" enctype="multipart/form-data">
@@ -199,15 +216,15 @@
             <p>No image uploaded yet.</p>
         {% endif %}
     </div> -->
-    <div id="imageContainer">
-      {% if uploaded_images %}
-          {% for image_url in uploaded_images|reverse %}
-              <img src="{{ latest_image_url }}" alt="Uploaded Image">
-          {% endfor %}
-      {% else %}
-          <p>No images uploaded yet.</p>
-      {% endif %}
-  </div>
+<div id="imageContainer">
+    {% if uploaded_images %}
+        {% for image_url in uploaded_images|reverse %}
+            <img src="{{ image_url }}" alt="Uploaded Image">  <!-- Changed from latest_image_url to image_url -->
+        {% endfor %}
+    {% else %}
+        <p>No images uploaded yet.</p>
+    {% endif %}
+</div>
 
 
     <!-- Socket.IO Connection Indicator -->
@@ -216,133 +233,170 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+<script>
+  // Initialize socket first
+  const socket = io();
 
-    <script>
-       
-      document.getElementById('refresh-button').addEventListener('click', function() {
-        location.reload(); // This will refresh the page
-      });
-           
-        const uploadButton = document.getElementById('uploadButton');
-        const fileInput = document.getElementById('fileInput');
-        const imageContainer = document.getElementById('imageContainer');
-        let latestImage = document.getElementById('latestImage');
-
-        // Handle button click and trigger file input
-        uploadButton.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // Handle file input selection
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                previewAndUploadImage(file);
+  document.addEventListener('DOMContentLoaded', () => {
+      // Clear button functionality
+      document.getElementById('clear-button').addEventListener('click', async () => {
+    if (confirm('Are you sure you want to clear all images?')) {
+        try {
+            const response = await fetch('/clear_images', {
+                method: 'POST',
+            });
+            
+            if (response.ok) {
+                const imageContainer = document.getElementById('imageContainer');
+                imageContainer.innerHTML = '<p>No images uploaded yet.</p>';
+                // Optionally reload the page to ensure everything is fresh
+                location.reload();
+            } else {
+                alert('Failed to clear images');
             }
-        });
-
-        // Handle paste event for pasting images with Ctrl+V
-        window.addEventListener('paste', (event) => {
-            const items = event.clipboardData.items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    const file = items[i].getAsFile();
-                    if (file) {
-                        previewAndUploadImage(file);
-                    }
-                }
-            }
-        });
-        function downloadZip(zipUrl) {
-        const link = document.createElement('a');
-        link.href = zipUrl;
-        link.download = zipUrl.split('/').pop();  // Set the filename for download
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error clearing images:', error);
+            alert('Error clearing images');
+        }
     }
+});
 
-        // Function to preview and upload the image
-    async function previewAndUploadImage(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-        const imageUrl = URL.createObjectURL(file);
-        latestImage.src = imageUrl; // Client-side preview
-        };
-        reader.readAsDataURL(file);
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        const response = await fetch('/upload_image', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            latestImage.src = result.image_url; // Server-side image
-            socket.emit('new_image', result.image_url); // Emit for real-time updates
-        } else {
-            alert(result.error);
-        }
-}
-
-        // Handle drag-and-drop
-        const dropZone = document.getElementById('dropZone');
-        dropZone.addEventListener('dragover', (event) => {
-            event.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
-        dropZone.addEventListener('drop', (event) => {
-            event.preventDefault();
-            dropZone.classList.remove('dragover');
-            const file = event.dataTransfer.files[0];
-            if (file) {
-                previewAndUploadImage(file);
-            }
-        });
-
-        // WebSocket connection
-        const socket = io();
-
-        console.log('WebSocket connection established'); // Log when WebSocket connection is established
-
-        // Update the Socket.IO connection indicator
-        socket.on('connect', () => {
-          document.querySelector('.socket-connected').style.display = 'block';
-        });
-
-        socket.on('disconnect', () => {
-          document.querySelector('.socket-connected').style.display = 'none';
-        });
-
-        // Receive real-time updates for the latest image
-        socket.on('new_image', (imageUrl) => {
-            console.log('Received new image:', imageUrl);
-            updateImage(imageUrl);  // Update the image on the page
-        });
-
-        socket.on('new_zip', (data) => {
-        const zipFilesList = document.getElementById('zip-files-list');
-        const newZipItem = document.createElement('li');
-        newZipItem.innerHTML = `<a href="${data.zip_url}" download>${data.zip_url.split('/').pop()}</a>`;
-        zipFilesList.appendChild(newZipItem);
+      // Refresh button
+      document.getElementById('refresh-button').addEventListener('click', function() {
+          location.reload();
       });
-        function updateImage(imageUrl) {
-            const imageContainer = document.getElementById('imageContainer');
-            const newImage = document.createElement('img');
-            newImage.src = imageUrl;
-            //imageContainer.innerHTML = '' // Clear existing content
-            // imageContainer.appendChild(newImage);
-            imageContainer.insertBefore(newImage, imageContainer.firstChild)
-        }
-    </script>
+
+      const uploadButton = document.getElementById('uploadButton');
+      const fileInput = document.getElementById('fileInput');
+      const imageContainer = document.getElementById('imageContainer');
+      let latestImage = document.getElementById('latestImage');
+
+      // Handle button click and trigger file input
+      uploadButton.addEventListener('click', () => {
+          fileInput.click();
+      });
+
+      // Handle file input selection
+      fileInput.addEventListener('change', (event) => {
+          const file = event.target.files[0];
+          if (file) {
+              previewAndUploadImage(file);
+          }
+      });
+
+      // Handle paste event
+      window.addEventListener('paste', (event) => {
+          const items = event.clipboardData.items;
+          for (let i = 0; i < items.length; i++) {
+              if (items[i].type.indexOf('image') !== -1) {
+                  const file = items[i].getAsFile();
+                  if (file) {
+                      previewAndUploadImage(file);
+                  }
+              }
+          }
+      });
+
+      // Handle drag-and-drop
+      const dropZone = document.getElementById('dropZone');
+      dropZone.addEventListener('dragover', (event) => {
+          event.preventDefault();
+          dropZone.classList.add('dragover');
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+          dropZone.classList.remove('dragover');
+      });
+
+      dropZone.addEventListener('drop', (event) => {
+          event.preventDefault();
+          dropZone.classList.remove('dragover');
+          const file = event.dataTransfer.files[0];
+          if (file) {
+              previewAndUploadImage(file);
+          }
+      });
+  });
+
+  // Socket event listeners
+  socket.on('connect', () => {
+      document.querySelector('.socket-connected').style.display = 'block';
+      console.log('WebSocket connection established');
+  });
+
+  socket.on('disconnect', () => {
+      document.querySelector('.socket-connected').style.display = 'none';
+  });
+
+  socket.on('new_image', (imageUrl) => {
+      console.log('Received new image:', imageUrl);
+      if (!document.querySelector(`img[src="${imageUrl}"]`)) {
+          const imageContainer = document.getElementById('imageContainer');
+          const newImage = document.createElement('img');
+          newImage.src = imageUrl;
+          newImage.alt = "Uploaded Image";
+          imageContainer.insertBefore(newImage, imageContainer.firstChild);
+      }
+  });
+
+  socket.on('images_cleared', () => {
+      const imageContainer = document.getElementById('imageContainer');
+      imageContainer.innerHTML = '<p>No images uploaded yet.</p>';
+  });
+
+  socket.on('new_zip', (data) => {
+      const zipFilesList = document.getElementById('zip-files-list');
+      const newZipItem = document.createElement('li');
+      newZipItem.innerHTML = `<a href="${data.zip_url}" download>${data.zip_url.split('/').pop()}</a>`;
+      zipFilesList.appendChild(newZipItem);
+  });
+
+  // Helper functions
+  function downloadZip(zipUrl) {
+      const link = document.createElement('a');
+      link.href = zipUrl;
+      link.download = zipUrl.split('/').pop();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  }
+
+  async function previewAndUploadImage(file) {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+          const response = await fetch('/upload_image', {
+              method: 'POST',
+              body: formData
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+              if (!document.querySelector(`img[src="${result.image_url}"]`)) {
+                  const imageContainer = document.getElementById('imageContainer');
+                  const newImage = document.createElement('img');
+                  newImage.src = result.image_url;
+                  newImage.alt = "Uploaded Image";
+                  imageContainer.insertBefore(newImage, imageContainer.firstChild);
+              }
+              socket.emit('new_image', result.image_url);
+          } else {
+              alert(result.error);
+          }
+      } catch (error) {
+          console.error('Error uploading image:', error);
+          alert('Error uploading image');
+      }
+  }
+
+  function updateImage(imageUrl) {
+      const imageContainer = document.getElementById('imageContainer');
+      const newImage = document.createElement('img');
+      newImage.src = imageUrl;
+      imageContainer.insertBefore(newImage, imageContainer.firstChild);
+  }
+</script>
 </body>
 </html>

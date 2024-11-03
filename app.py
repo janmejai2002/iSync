@@ -2,11 +2,34 @@ from flask import Flask, render_template, request, send_file,jsonify, url_for, a
 from werkzeug.utils import secure_filename
 import os
 from flask_socketio import SocketIO, emit
-import zipfile
 from datetime import datetime
+import json
+from dotenv import load_dotenv
+load_dotenv()
+
+def save_uploaded_files():
+    data = {
+        'images': uploaded_images,
+        'zip_files': uploaded_zip_files
+    }
+    with open('uploaded_files.json', 'w') as f:
+        json.dump(data, f)
+
+def load_uploaded_files():
+    global uploaded_images, uploaded_zip_files
+    try:
+        with open('uploaded_files.json', 'r') as f:
+            data = json.load(f)
+            uploaded_images = data.get('images', [])
+            uploaded_zip_files = data.get('zip_files', [])
+    except FileNotFoundError:
+        uploaded_images = []
+        uploaded_zip_files = []
+
 
 app = Flask(__name__)
-app.secret_key="chingalinga"
+
+app.secret_key=os.environ.get('FLASK_SECRET_KEY')
 socketio = SocketIO(app)
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
@@ -34,11 +57,11 @@ def test_disconnect():
 
 @app.route('/')
 def index():
-    current_time = datetime.now().timestamp()
-    return render_template('index.html', latest_image_url=uploaded_images, uploaded_zip_files=uploaded_zip_files, current_time=current_time
-    )
-
-# Image upload route
+    load_uploaded_files()  # Load the saved files
+    return render_template('index.html', 
+                         uploaded_images=uploaded_images,
+                         uploaded_zip_files=uploaded_zip_files)
+# Modify your upload_image route
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
     global latest_image_url
@@ -52,11 +75,10 @@ def upload_image():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
 
-    # Store the URL of the latest image
     latest_image_url = f'/static/uploads/{filename}'
     uploaded_images.append(latest_image_url)
-    # Emit the update to all connected clients
-    socketio.emit('new_image', latest_image_url)  # Emit here
+    save_uploaded_files()  # Save after upload
+    socketio.emit('new_image', latest_image_url)
 
     return jsonify({'image_url': latest_image_url})
 
@@ -78,18 +100,16 @@ def upload_zip():
         return redirect(request.url)
     
     if file and file.filename.endswith('.zip'):
-        # Save the ZIP file
         zip_filename = secure_filename(file.filename)
         zip_filepath = os.path.join(app.config['UPLOAD_FOLDER'], zip_filename)
         file.save(zip_filepath)
 
-        # Add the uploaded ZIP file to the list
         uploaded_zip_files.append(f'/static/uploads/{zip_filename}')
-  # Emit an update to refresh the ZIP file list on connected clients
+        save_uploaded_files()  # Save after upload
         socketio.emit('new_zip', {'zip_url': f'/static/uploads/{zip_filename}'})
         
         flash('ZIP file uploaded successfully!')
-        return redirect(url_for('index'))  # Redirect to the upload page
+        return redirect(url_for('index'))
     
     flash('Invalid file type. Please upload a ZIP file.')
     return redirect(request.url)
@@ -110,6 +130,29 @@ def get_latest_image():
         return jsonify({'image_url': latest_image_url})
     return jsonify({'error': 'No image uploaded yet'}), 404
 
+
+@app.route('/clear_images', methods=['POST'])
+def clear_images():
+    global uploaded_images, uploaded_zip_files
+    
+    # Clear the lists of uploaded files
+    uploaded_images = []
+    uploaded_zip_files = []
+    
+    # Save the empty state to the JSON file
+    # save_uploaded_files()
+    
+    try:
+        # Clear the JSON file by writing empty lists
+        with open('uploaded_files.json', 'w') as f:
+            json.dump({'images': [], 'zip_files': []}, f)
+        socketio.emit('images_cleared')
+        return jsonify({'message': 'Images cleared successfully'}), 200
+    except Exception as e:
+        print(f"Error clearing images : {e}")
+        return jsonify({'error': 'Failed to clear images'}), 500
+ 
+
 def get_local_ip():
     try:
         # Create a socket and connect to an external address to find the local IP
@@ -123,6 +166,10 @@ def get_local_ip():
         s.close()
     return ip_address
     
+@app.before_request
+def initialize():
+    load_uploaded_files()
+
 if __name__ == '__main__':
     local_ip = get_local_ip()
     print(f"Flask server running at: http://{local_ip}:5000/")
