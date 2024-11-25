@@ -1,112 +1,3 @@
-
-
-// const socket = io();
-
-// document.addEventListener('DOMContentLoaded', () => {
-//     document.getElementById('clear-button').addEventListener('click', async () => {
-//         if (confirm('Are you sure you want to clear all images?')) {
-//             try {
-//                 const response = await fetch('/clear_images', { method: 'POST' });
-//                 if (response.ok) {
-//                     document.getElementById('imageContainer').innerHTML = '<p>No images uploaded yet.</p>';
-//                     location.reload();
-//                 } else {
-//                     alert('Failed to clear images');
-//                 }
-//             } catch (error) {
-//                 console.error('Error clearing images:', error);
-//                 alert('Error clearing images');
-//             }
-//         }
-//     });
-
-//     document.getElementById('refresh-button').addEventListener('click', () => {
-//         location.reload();
-//     });
-
-//     const uploadButton = document.getElementById('uploadButton');
-//     const fileInput = document.getElementById('fileInput');
-
-//     uploadButton.addEventListener('click', () => {
-//         fileInput.click();
-//     });
-
-//     fileInput.addEventListener('change', (event) => {
-//         const file = event.target.files[0];
-//         if (file) {
-//             previewAndUploadImage(file);
-//         }
-//     });
-
-//     const dropZone = document.getElementById('dropZone');
-//     dropZone.addEventListener('dragover', (event) => {
-//         event.preventDefault();
-//         dropZone.classList.add('dragover');
-//     });
-
-//     dropZone.addEventListener('dragleave', () => {
-//         dropZone.classList.remove('dragover');
-//     });
-
-//     dropZone.addEventListener('drop', (event) => {
-//         event.preventDefault();
-//         dropZone.classList.remove('dragover');
-//         const file = event.dataTransfer.files[0];
-//         if (file) {
-//             previewAndUploadImage(file);
-//         }
-//     });
-// });
-
-// socket.on('connect', () => {
-//     document.querySelector('.socket-connected').style.display = 'block';
-//     console.log('WebSocket connection established');
-// });
-
-// socket.on('disconnect', () => {
-//     document.querySelector('.socket-connected').style.display = 'none';
-// });
-
-// socket.on('new_image', (imageUrl) => {
-//     if (!document.querySelector(`img[src="${imageUrl}"]`)) {
-//         const imageContainer = document.getElementById('imageContainer');
-//         const newImage = document.createElement('img');
-//         newImage.src = imageUrl;
-//         newImage.alt = "Uploaded Image";
-//         imageContainer.insertBefore(newImage, imageContainer.firstChild);
-//     }
-// });
-
-// async function previewAndUploadImage(file) {
-//     const formData = new FormData();
-//     formData.append('image', file);
-
-//     try {
-//         const response = await fetch('/upload_image', {
-//             method: 'POST',
-//             body: formData
-//         });
-
-//         const result = await response.json();
-
-//         if (response.ok) {
-//             if (!document.querySelector(`img[src="${result.image_url}"]`)) {
-//                 const imageContainer = document.getElementById('imageContainer');
-//                 const newImage = document.createElement('img');
-//                 newImage.src = result.image_url;
-//                 newImage.alt = "Uploaded Image";
-//                 imageContainer.insertBefore(newImage, imageContainer.firstChild);
-//             }
-//             socket.emit('new_image', result.image_url);
-//         } else {
-//             alert(result.error);
-//         }
-//     } catch (error) {
-//         console.error('Error uploading image:', error);
-//         alert('Error uploading image');
-//     }
-// }
-
 // Initialize socket
 const socket = io();
 
@@ -225,3 +116,54 @@ function previewAndUploadImage(file) {
     };
     reader.readAsDataURL(file);
 }
+
+// Convert to PDF button
+const convertToPdfButton = document.getElementById('convertToPdfButton');
+
+convertToPdfButton.addEventListener('click', async () => {
+    // Gather selected images
+    const selectedImages = Array.from(document.querySelectorAll('.image-checkbox:checked')).map(checkbox => checkbox.value);
+
+    if (selectedImages.length === 0) {
+        alert('Please select at least one image to convert to PDF');
+        return;
+    }
+
+    try {
+        const response = await fetch('/convert_to_pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ selected_images: selectedImages })
+        });
+
+        if (response.ok) {
+            // Get the generated PDF file
+            const blob = await response.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = 'output.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } else {
+            alert('Failed to generate PDF');
+        }
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Failed to generate PDF');
+    }
+});
+
+// "Select All" button
+const selectAllButton = document.getElementById('selectAllButton');
+let selectAll = true; // Track if we should select or deselect all
+
+selectAllButton.addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('.image-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll; // Set the checked state
+    });
+    selectAll = !selectAll; // Toggle between select and deselect
+    selectAllButton.innerHTML = selectAll ? '<i class="fas fa-check-square"></i> Select All' : '<i class="fas fa-times-circle"></i> Deselect All';
+});

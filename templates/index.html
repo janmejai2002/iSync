@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InstaSync</title>
+    <title>iSync</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <!-- Font Awesome for icons -->
@@ -13,34 +13,39 @@
 </head>
 <body>
     <div class="container">
-        <h1>InstaSync</h1>
+        <h1><i class="fas fa-sync-alt"></i> iSync</h1>
         
         <div class="grid">
             <div id="dropZone">
+                <i class="fas fa-cloud-upload-alt fa-3x"></i>
                 <p>Drag and drop an image or click to upload</p>
                 <input type="file" id="fileInput" accept="image/*" hidden>
-                <button id="uploadButton" class="button">Upload Image</button>
+                <button id="uploadButton" class="button"><i class="fas fa-upload"></i> Upload Image</button>
             </div>
         </div>
 
         <div class="refresh-button-container">
-            <button id="refresh-button" class="button">Refresh</button>
+            <button id="refresh-button" class="button"><i class="fas fa-sync"></i> Refresh</button>
+            <button id="clear-button" class="button"><i class="fas fa-trash-alt"></i> Clear</button>
+            <button id="selectAllButton" class="button"><i class="fas fa-check-square"></i> Select All</button>
+            <button id="convertToPdfButton" class="button"><i class="fas fa-file-pdf"></i> Convert to PDF</button>
+            
         </div>
 
-        <button id="clear-button" class="button">Clear All Images</button>
+
 
         <!-- ZIP file upload form -->
         <form action="/upload_zip" method="post" enctype="multipart/form-data">
-            <input type="file" name="zip_file" accept=".zip" required>
-            <button type="submit" class="button">Upload ZIP</button>
+            <input type="file" name="zip_file" required>
+            <button type="submit" class="button"><i class="fas fa-file-archive"></i> Upload File</button>
         </form>
 
         <!-- ZIP files list -->
         <div id="zip-files-list">
             {% for zip_file in uploaded_zip_files %}
                 <div class="zip-file-item">
-                    <span>{{ zip_file.split('/')[-1] }}</span>
-                    <a href="{{ zip_file }}" download class="download-btn">Download ZIP</a>
+                    <span><i class="fas fa-file-archive"></i> {{ zip_file.split('/')[-1] }}</span>
+                    <a href="{{ zip_file }}" download class="download-btn"><i class="fas fa-download"></i> Download </a>
                 </div>
             {% endfor %}
         </div>
@@ -49,16 +54,18 @@
         <div id="imageContainer">
             {% if uploaded_images %}
                 {% for image_url in uploaded_images|reverse %}
-                    <img src="{{ image_url }}" alt="Uploaded Image">
+                    <div class="image-item">
+                        <input type="checkbox" class="image-checkbox" value="{{ image_url }}">
+                        <img src="{{ image_url }}" alt="Uploaded Image">
+                    </div>
                 {% endfor %}
             {% else %}
-                <p>No images uploaded yet.</p>
+                <p><i class="fas fa-image"></i> No images uploaded yet.</p>
             {% endif %}
         </div>
-
         <!-- Socket.IO Connection Indicator -->
         <div class="socket-connected">
-            <span>Connected to Socket.IO</span>
+            <i class="fas fa-plug"></i> <span>Connected to Socket.IO</span>
         </div>
     </div>
 
